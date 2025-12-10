@@ -1,18 +1,21 @@
-require('dotenv').config(); // Carga las variables de entorno desde .env
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Carga las variables de entorno desde .env
 
 const express = require('express');
-const path = require('path');
 const app = express();
-const conexion = require('./Back/conexion');
-const { registrarUsuario, verificarDuplicados } = require('./Back/singup');
+const conexion = require('./conexion');
+const { registrarUsuario, verificarDuplicados } = require('./singup');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname + '/Font'));
-app.use(express.static(__dirname));
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Configurar CORS para permitir peticiones desde el Front
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE');
+    next();
 });
 
 app.post('/signup', (req, res) => {

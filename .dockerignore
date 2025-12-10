@@ -1,8 +1,2 @@
-# Excluir dependencias locales
 node_modules
-
-# Excluir archivos de configuración y logs
-npm-debug.log
-.git
-Dockerfile
-.dockerignore
+.env
