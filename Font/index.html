@@ -32,5 +32,26 @@
             <h2>Bienvenido a la tienda en línea</h2>
             <p>Encuentra lo último en tecnología para tu hogar.</p>
         </main>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const user = JSON.parse(localStorage.getItem('user'));
+                const userActions = document.querySelector('.user-actions');
+
+                if (user) {
+                    // Si hay usuario logueado, mostrar saludo y botón de salir
+                    userActions.innerHTML = `
+                        <span style="margin-right: 10px; font-weight: bold;">Hola, ${user.nombre}</span>
+                        <a href="#" id="logout-btn" class="login-link">Cerrar sesión</a>
+                    `;
+
+                    document.getElementById('logout-btn').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem('user'); // Borrar sesión
+                        window.location.reload(); // Recargar página
+                    });
+                }
+            });
+        </script>
     </body>
 </html>

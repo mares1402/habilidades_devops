@@ -27,4 +27,13 @@ function registrarUsuario({ name, apellido_paterno, apellido_materno, email, pas
     });
 }
 
-module.exports = { registrarUsuario, verificarDuplicados };
+// Busca un usuario por su email
+function buscarUsuarioPorEmail(email, callback) {
+    const query = 'SELECT * FROM usuarios WHERE email = ?';
+    conexion.query(query, [email], (err, results) => {
+        if (err) return callback(err);
+        callback(null, results[0]);
+    });
+}
+
+module.exports = { registrarUsuario, verificarDuplicados, buscarUsuarioPorEmail };

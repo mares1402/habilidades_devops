@@ -4,7 +4,8 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Carga
 const express = require('express');
 const app = express();
 const conexion = require('./conexion');
-const { registrarUsuario, verificarDuplicados } = require('./singup');
+const bcrypt = require('bcrypt');
+const { registrarUsuario, verificarDuplicados, buscarUsuarioPorEmail } = require('./singup');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -23,22 +24,50 @@ app.post('/signup', (req, res) => {
 
     // Validar que todos los campos estén presentes
     if (!name || !apellido_paterno || !apellido_materno || !email || !password || !confirm_password || !telefono) {
-        return res.status(400).send('Todos los campos son obligatorios');
+        return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios' });
     }
 
     if (password !== confirm_password) {
-        return res.status(400).send('Las contraseñas no coinciden');
+        return res.status(400).json({ success: false, message: 'Las contraseñas no coinciden' });
     }
 
     // Verificar duplicados por email o teléfono
     verificarDuplicados(email, telefono, (err, duplicado) => {
-        if (err) return res.status(500).send('Error al verificar duplicados');
-        if (duplicado.email) return res.status(400).send('Este correo ya está registrado');
-        if (duplicado.telefono) return res.status(400).send('Este número de teléfono ya está registrado');
+        if (err) {
+            console.error('Error detallado de BD:', err);
+            return res.status(500).json({ success: false, message: 'Error al verificar duplicados' });
+        }
+        if (duplicado.email) return res.status(400).json({ success: false, message: 'Este correo ya está registrado' });
+        if (duplicado.telefono) return res.status(400).json({ success: false, message: 'Este número de teléfono ya está registrado' });
 
         registrarUsuario({ name, apellido_paterno, apellido_materno, email, password, telefono }, (err, result) => {
-            if (err) return res.status(500).send('Error al registrar usuario');
-            res.send('Usuario registrado exitosamente');
+            if (err) {
+                console.error('Error al registrar usuario:', err);
+                return res.status(500).json({ success: false, message: 'Error al registrar usuario' });
+            }
+            res.status(201).json({ success: true, message: 'Usuario registrado exitosamente' });
+        });
+    });
+});
+
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Correo y contraseña son obligatorios' });
+    }
+
+    buscarUsuarioPorEmail(email, (err, user) => {
+        if (err) return res.status(500).json({ success: false, message: 'Error en el servidor' });
+        if (!user) return res.status(400).json({ success: false, message: 'Usuario no encontrado' });
+
+        bcrypt.compare(password, user.password, (err, isMatch) => {
+            if (err) return res.status(500).json({ success: false, message: 'Error al verificar contraseña' });
+            if (!isMatch) return res.status(400).json({ success: false, message: 'Contraseña incorrecta' });
+
+            // Login exitoso: devolvemos datos del usuario (sin la contraseña)
+            const { password, ...userData } = user;
+            res.json({ success: true, user: userData });
         });
     });
 });
